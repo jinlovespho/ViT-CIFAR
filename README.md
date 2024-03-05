@@ -1,15 +1,23 @@
 # ViT-CIFAR
 
-PyTorch implementation for Vision Transformer[[Dosovitskiy, A.(ICLR'21)]](https://openreview.net/forum?id=YicbFdNTTy) **modified to obtain over 90% accuracy**(, I know, which is easily reached using CNN-based architectures.) **FROM SCRATCH on CIFAR-10 with small number of parameters (= 6.3M, originally ViT-B has 86M)**. If there is some problem, let me know kindly :) Any suggestions are welcomed!
+PyTorch implementation for Vision Transformer[[Dosovitskiy, A.(ICLR'21)]] forked from https://github.com/omihub777/ViT-CIFAR.
+Modifications made such as updating pytorch-lightning==1.2.1 to lightning 2.2.1
+
+1. conda create -n py310 python=3.10
+2. Download latest pytorch(torch, torchvision, torchaudio) from https://pytorch.org/get-started/locally/ 
+3. sh setup.sh to download requirements -> jlp_requirements.txt 
+4. sh run_main.sh for baseline vit cifar100
+
 
 ## 1. Quick Start
 
 1. **Install packages**
 ```sh
-$git clone https://github.com/omihub777/ViT-CIFAR.git
+$git clone https://github.com/jinlovespho/ViT-CIFAR.git
 $cd ViT-CIFAR/
 $bash setup.sh
 ```
+
 
 2. **Train ViT on CIFAR-10**
 

@@ -53,6 +53,7 @@ parser.add_argument("--num_workers", type=int, default=4)
 parser.add_argument("--project_name", default="VisionTransformer")
 parser.add_argument('--experiment-memo', default='memo')
 parser.add_argument('--data_path', type=str, default='./')
+parser.add_argument('--save_dir', type=str, default='/mnt/ssd2/')
 parser.add_argument('--logger', type=str, default='comet')
 args = parser.parse_args()
 torch.manual_seed(args.seed)
@@ -124,8 +125,8 @@ class Net(pl.LightningModule):
             self._log_image(img.clone().detach().cpu())
 
         acc = torch.eq(out.argmax(-1), label).float().mean()
-        self.log("loss", loss)
-        self.log("acc", acc)
+        self.log("train_loss",loss, on_step=False, on_epoch=True)
+        self.log("train_acc", acc, on_step=False, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -134,8 +135,8 @@ class Net(pl.LightningModule):
         out = self(img)
         loss = self.criterion(out, label)
         acc = torch.eq(out.argmax(-1), label).float().mean()
-        self.log("val_loss", loss)
-        self.log("val_acc", acc)
+        self.log("val_loss", loss, on_step=False, on_epoch=True)
+        self.log("val_acc", acc, on_step=False, on_epoch=True)
         return loss
 
     def on_train_epoch_end(self, *args, **kwargs):
@@ -162,14 +163,14 @@ if __name__ == "__main__":
             log_model='all',
             project=args.project_name,
             name=experiment_name,
-            save_dir='./logs/wandb'
+            save_dir=f'{args.save_dir}'
         )
     
     elif args.logger == 'comet':
         print("[INFO] Log with Comet.ml!")
         logger = pl.loggers.CometLogger(
             api_key=args.api_key,
-            save_dir="logs",
+            save_dir=f'{args.save_dir}/comet',
             project_name=args.project_name,
             experiment_name=experiment_name
         )
@@ -177,17 +178,18 @@ if __name__ == "__main__":
     else:
         print("[INFO] Log with CSV")
         logger = pl.loggers.CSVLogger(
-            save_dir="logs",
+            save_dir=f'{args.save_dir}/drive',
             name=experiment_name
         )
 
     # breakpoint()
     net = Net(args)
+    # net = torch.compile(net,  mode='reduce-overhead')
     trainer = pl.Trainer(precision=args.precision,fast_dev_run=args.dry_run, accelerator='auto', benchmark=args.benchmark, logger=logger, max_epochs=args.max_epochs, enable_model_summary=True)
     trainer.fit(model=net, train_dataloaders=train_dl, val_dataloaders=test_dl)
     
     if not args.dry_run:
-        model_path = f"weights/{experiment_name}.pth"
+        model_path = f'{args.save_dir}/weights/{experiment_name}.pth'
         torch.save(net.state_dict(), model_path)
         if args.api_key:
             logger.experiment.log_asset(file_name=experiment_name, file_data=model_path)

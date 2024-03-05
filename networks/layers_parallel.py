@@ -4,7 +4,6 @@ import torch.nn.functional as F
 import torchsummary
 from einops import rearrange, einsum
 
-
 class TransformerEncoder_Parallel(nn.Module):
     def __init__(self, feats:int, mlp_hidden:int, head:int=8, dropout:float=0.):
         super(TransformerEncoder_Parallel, self).__init__()

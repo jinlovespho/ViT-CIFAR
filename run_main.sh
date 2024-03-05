@@ -1,7 +1,11 @@
 #!/bin/bash
 
+# 0. Paths
+DATA_PATH="/mnt/ssd2/dataset/CIFAR100"
+SAVE_DIR="/mnt/ssd2/log/vit_cifar100"
+
 # 1. Hyperparameters
-MODEL_NAME="vit"
+MODEL_NAME="vit"        # ['vit', 'vit_parallel']
 DATASET="c100"
 BATCH_SIZE=128
 LR=1e-3
@@ -10,17 +14,17 @@ NUM_LAYERS=8
 HIDDEN=384
 MLP_HIDDEN=1536
 NUM_WORKERS=4
-DATA_PATH="/mnt/ssd2/dataset/CIFAR100"
-LOGGER="wandb"
 
 # 2. Proj & Exp Info
+LOGGER="wandb"
 PROJ_NAME="lignex1_vit_cifar100"
-EXP_NAME="LOCAL_bs${BATCH_SIZE}_${MODEL_NAME}_baseline"
+EXP_NAME="LOCAL_jlp_bs${BATCH_SIZE}_${MODEL_NAME}_baseline"
 
 # 3. run
 CUDA_VISIBLE_DEVICES=0 python main.py   --model-name ${MODEL_NAME} \
                                         --dataset ${DATASET} \
                                         --data_path ${DATA_PATH} \
+                                        --save_dir ${SAVE_DIR} \
                                         --num-classes 100 \
                                         --patch 8 \
                                         --batch-size ${BATCH_SIZE} \
