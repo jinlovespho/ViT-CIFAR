@@ -2,9 +2,9 @@ import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
 
-from autoaugment import CIFAR10Policy, SVHNPolicy
-from criterions import LabelSmoothingCrossEntropyLoss
-from da import RandomCropPaste
+from util.autoaugment import CIFAR10Policy, SVHNPolicy
+from util.criterions import LabelSmoothingCrossEntropyLoss
+from util.da import RandomCropPaste
 
 def get_criterion(args):
     if args.criterion=="ce":
@@ -19,7 +19,7 @@ def get_criterion(args):
 
 def get_model(args):
     if args.model_name == 'vit':
-        from vit import ViT
+        from networks.vit import ViT
         net = ViT(
             args.in_c, 
             args.num_classes, 
@@ -32,6 +32,24 @@ def get_model(args):
             head=args.head,
             is_cls_token=args.is_cls_token
             )
+    
+    # JINLOVESPHO
+    elif args.model_name == 'vit_parallel':
+        from networks.vit_parallel import ViT_Parallel
+        breakpoint()
+        net = ViT_Parallel(
+            args.in_c, 
+            args.num_classes, 
+            img_size=args.size, 
+            patch=args.patch, 
+            dropout=args.dropout, 
+            mlp_hidden=args.mlp_hidden,
+            num_layers=args.num_layers,
+            hidden=args.hidden,
+            head=args.head,
+            is_cls_token=args.is_cls_token
+            )    
+    
     else:
         raise NotImplementedError(f"{args.model_name} is not implemented yet...")
 
@@ -73,7 +91,7 @@ def get_transform(args):
     
 
 def get_dataset(args):
-    root = "data"
+    data_path = args.data_path
     if args.dataset == "c10":
         args.in_c = 3
         args.num_classes=10
@@ -81,8 +99,8 @@ def get_dataset(args):
         args.padding = 4
         args.mean, args.std = [0.4914, 0.4822, 0.4465], [0.2470, 0.2435, 0.2616]
         train_transform, test_transform = get_transform(args)
-        train_ds = torchvision.datasets.CIFAR10(root, train=True, transform=train_transform, download=True)
-        test_ds = torchvision.datasets.CIFAR10(root, train=False, transform=test_transform, download=True)
+        train_ds = torchvision.datasets.CIFAR10(data_path, train=True, transform=train_transform, download=True)
+        test_ds = torchvision.datasets.CIFAR10(data_path, train=False, transform=test_transform, download=True)
 
     elif args.dataset == "c100":
         args.in_c = 3
@@ -91,8 +109,8 @@ def get_dataset(args):
         args.padding = 4
         args.mean, args.std = [0.5071, 0.4867, 0.4408], [0.2675, 0.2565, 0.2761]
         train_transform, test_transform = get_transform(args)
-        train_ds = torchvision.datasets.CIFAR100(root, train=True, transform=train_transform, download=True)
-        test_ds = torchvision.datasets.CIFAR100(root, train=False, transform=test_transform, download=True)
+        train_ds = torchvision.datasets.CIFAR100(data_path, train=True, transform=train_transform, download=True)
+        test_ds = torchvision.datasets.CIFAR100(data_path, train=False, transform=test_transform, download=True)
 
     elif args.dataset == "svhn":
         args.in_c = 3
@@ -101,8 +119,8 @@ def get_dataset(args):
         args.padding = 4
         args.mean, args.std = [0.4377, 0.4438, 0.4728], [0.1980, 0.2010, 0.1970]
         train_transform, test_transform = get_transform(args)
-        train_ds = torchvision.datasets.SVHN(root, split="train",transform=train_transform, download=True)
-        test_ds = torchvision.datasets.SVHN(root, split="test", transform=test_transform, download=True)
+        train_ds = torchvision.datasets.SVHN(data_path, split="train",transform=train_transform, download=True)
+        test_ds = torchvision.datasets.SVHN(data_path, split="test", transform=test_transform, download=True)
 
     else:
         raise NotImplementedError(f"{args.dataset} is not implemented yet.")
@@ -110,7 +128,7 @@ def get_dataset(args):
     return train_ds, test_ds
 
 def get_experiment_name(args):
-    experiment_name = f"{args.model_name}_{args.dataset}"
+    experiment_name = f"{args.experiment_memo}"
     if args.autoaugment:
         experiment_name+="_aa"
     if args.label_smoothing:

@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchsummary
+from einops import rearrange, einsum
 
 
 class TransformerEncoder(nn.Module):
@@ -48,6 +49,24 @@ class MultiHeadSelfAttention(nn.Module):
         score = F.softmax(torch.einsum("bhif, bhjf->bhij", q, k)/self.sqrt_d, dim=-1) #(b,h,n,n)
         attn = torch.einsum("bhij, bhjf->bihf", score, v) #(b,n,h,f//h)
         o = self.dropout(self.o(attn.flatten(2)))
+        
+        # MY ATTENTION IMPLEMENTATION
+    
+        # b, n, d = x.shape
+        
+        # query = self.q(x)
+        # key = self.k(x)
+        # value = self.v(x)
+        
+        # query = rearrange(query, 'b n (h d) -> b h n d', h=self.head)
+        # key = rearrange(key, 'b n (h d) -> b h n d', h=self.head)
+        # value = rearrange(value, 'b n (h d) -> b h n d', h=self.head)    
+              
+        # attn_matrix = einsum(query, key, 'b h n1 d, b h n2 d -> b h n1 n2') #(b,h,n,n)
+        # score = F.softmax(attn_matrix/self.sqrt_d, dim=-1)  #(b,h,n,n)
+        # attn = einsum(score, value, 'b h n1 n2, b h n2 d -> b n1 h d')  # (b n h d) 
+        # o = self.dropout(self.o(attn.flatten(2)))
+        
         return o
 
 class MultiHeadDepthwiseSelfAttention(nn.Module):
