@@ -11,11 +11,11 @@ HIDDEN=384
 MLP_HIDDEN=1536
 NUM_WORKERS=4
 DATA_PATH="/mnt/ssd2/dataset/CIFAR100"
-LOGGER="comet"
+LOGGER="wandb"
 
 # 2. Proj & Exp Info
 PROJ_NAME="lignex1_vit_cifar100"
-EXP_NAME="LOCAL_bs${BATCH_SIZE}_${LR}_${MODEL_NAME}_numlayers${NUM_LAYERS}_heads${HEAD}_hiddens${HIDDEN}"
+EXP_NAME="LOCAL_bs${BATCH_SIZE}_${MODEL_NAME}"
 
 # 3. run
 CUDA_VISIBLE_DEVICES=0 python main.py   --model-name ${MODEL_NAME} \

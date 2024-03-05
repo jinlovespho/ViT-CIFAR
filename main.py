@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
-import pytorch_lightning as pl
+import lightning as pl
 import warmup_scheduler
 import numpy as np
 
@@ -79,7 +79,6 @@ class Net(pl.LightningModule):
     def __init__(self, hparams):
         super(Net, self).__init__()
         # breakpoint()
-        self.hparams = hparams
         self.hparams.update(vars(hparams))
         self.model = get_model(hparams)
         self.criterion = get_criterion(args)
@@ -129,10 +128,6 @@ class Net(pl.LightningModule):
         self.log("acc", acc)
         return loss
 
-    def training_epoch_end(self, outputs):
-        # breakpoint()
-        self.log("lr", self.optimizer.param_groups[0]["lr"], on_epoch=self.current_epoch)
-
     def validation_step(self, batch, batch_idx):
         # breakpoint()
         img, label = batch
@@ -143,8 +138,16 @@ class Net(pl.LightningModule):
         self.log("val_acc", acc)
         return loss
 
-    def _log_image(self, image):
+    def on_train_epoch_end(self, *args, **kwargs):
         # breakpoint()
+        self.log("lr", self.optimizer.param_groups[0]["lr"], on_epoch=True)
+        
+    def on_validation_epoch_end(self, *args, **kwargs):
+        # breakpoint()
+        self.log("lr", self.optimizer.param_groups[0]["lr"], on_epoch=True)
+
+    def _log_image(self, image):
+        breakpoint()
         grid = torchvision.utils.make_grid(image, nrow=4)
         self.logger.experiment.log_image(grid.permute(1,2,0))
         print("[INFO] LOG IMAGE!!!")
@@ -152,18 +155,16 @@ class Net(pl.LightningModule):
 
 if __name__ == "__main__":
     experiment_name = get_experiment_name(args)
-    print(experiment_name)
-    
+        
     if args.logger == 'wandb':
         print('[WANDB Logger]')
         logger = WandbLogger(
             log_model='all',
             project=args.project_name,
             name=experiment_name,
-            dir='log_wandb'
+            save_dir='./logs/wandb'
         )
-        refresh_rate = 0
-        
+    
     elif args.logger == 'comet':
         print("[INFO] Log with Comet.ml!")
         logger = pl.loggers.CometLogger(
@@ -172,7 +173,6 @@ if __name__ == "__main__":
             project_name=args.project_name,
             experiment_name=experiment_name
         )
-        refresh_rate = 0
         
     else:
         print("[INFO] Log with CSV")
@@ -180,12 +180,12 @@ if __name__ == "__main__":
             save_dir="logs",
             name=experiment_name
         )
-        refresh_rate = 1
-    
+
     # breakpoint()
     net = Net(args)
-    trainer = pl.Trainer(precision=args.precision,fast_dev_run=args.dry_run, gpus=args.gpus, benchmark=args.benchmark, logger=logger, max_epochs=args.max_epochs, weights_summary="full", progress_bar_refresh_rate=refresh_rate)
-    trainer.fit(model=net, train_dataloader=train_dl, val_dataloaders=test_dl)
+    trainer = pl.Trainer(precision=args.precision,fast_dev_run=args.dry_run, accelerator='auto', benchmark=args.benchmark, logger=logger, max_epochs=args.max_epochs, enable_model_summary=True)
+    trainer.fit(model=net, train_dataloaders=train_dl, val_dataloaders=test_dl)
+    
     if not args.dry_run:
         model_path = f"weights/{experiment_name}.pth"
         torch.save(net.state_dict(), model_path)

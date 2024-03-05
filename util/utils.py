@@ -20,6 +20,7 @@ def get_criterion(args):
 def get_model(args):
     if args.model_name == 'vit':
         from networks.vit import ViT
+        breakpoint()
         net = ViT(
             args.in_c, 
             args.num_classes, 
@@ -129,17 +130,17 @@ def get_dataset(args):
 
 def get_experiment_name(args):
     experiment_name = f"{args.experiment_memo}"
-    if args.autoaugment:
-        experiment_name+="_aa"
-    if args.label_smoothing:
-        experiment_name+="_ls"
-    if args.rcpaste:
-        experiment_name+="_rc"
-    if args.cutmix:
-        experiment_name+="_cm"
-    if args.mixup:
-        experiment_name+="_mu"
-    if args.off_cls_token:
-        experiment_name+="_gap"
+    # if args.autoaugment:
+    #     experiment_name+="_aa"
+    # if args.label_smoothing:
+    #     experiment_name+="_ls"
+    # if args.rcpaste:
+    #     experiment_name+="_rc"
+    # if args.cutmix:
+    #     experiment_name+="_cm"
+    # if args.mixup:
+    #     experiment_name+="_mu"
+    # if args.off_cls_token:
+    #     experiment_name+="_gap"
     print(f"Experiment:{experiment_name}")
     return experiment_name
