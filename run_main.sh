@@ -5,8 +5,9 @@ DATA_PATH="/mnt/ssd2/dataset/CIFAR100"
 SAVE_DIR="/mnt/ssd2/log/vit_cifar100"
 
 # 1. Hyperparameters
-MODEL_NAME="vit"        # ['vit', 'vit_parallel']
+MODEL_NAME="vit_gyu"        # ['vit', 'vit_parallel', 'vit_gyu']
 DATASET="c100"
+MAX_EPOCHS=200
 BATCH_SIZE=128
 LR=1e-3
 HEAD=8
@@ -15,10 +16,10 @@ HIDDEN=384
 MLP_HIDDEN=1536
 NUM_WORKERS=4
 
-# 2. Proj & Exp Info
+# 2. Logger & Project & Experiment Info
 LOGGER="wandb"
 PROJ_NAME="lignex1_vit_cifar100"
-EXP_NAME="LOCAL_jlp_bs${BATCH_SIZE}_${MODEL_NAME}_baseline"
+EXP_NAME="LOCAL_bs${BATCH_SIZE}_${MODEL_NAME}_separate"
 
 # 3. run
 CUDA_VISIBLE_DEVICES=0 python main.py   --model-name ${MODEL_NAME} \
@@ -30,16 +31,16 @@ CUDA_VISIBLE_DEVICES=0 python main.py   --model-name ${MODEL_NAME} \
                                         --batch-size ${BATCH_SIZE} \
                                         --eval-batch-size 1024 \
                                         --lr ${LR} \
-                                        --max-epochs 200 \
+                                        --max-epochs ${MAX_EPOCHS} \
                                         --dropout 0 \
                                         --head ${HEAD} \
                                         --num-layers ${NUM_LAYERS} \
                                         --hidden ${HIDDEN} \
                                         --mlp-hidden ${MLP_HIDDEN} \
                                         --project_name ${PROJ_NAME} \
-                                        --experiment-memo ${EXP_NAME} \
+                                        --experiment_memo ${EXP_NAME} \
                                         --num_workers ${NUM_WORKERS} \
-                                        --logger ${LOGGER}
-                                        # --api-key upJRJyzbQWeOazI7HlvvikhpG
+                                        --logger ${LOGGER} \
+                                        --api-key upJRJyzbQWeOazI7HlvvikhpG
 
 echo "finished one experiment"

@@ -13,8 +13,12 @@ from util.utils import get_model, get_dataset, get_experiment_name, get_criterio
 from util.da import CutMix, MixUp
 
 # JINLOVESPHO
+import os
 import matplotlib.pyplot as plt 
+from lightning.pytorch.callbacks import Callback
 from lightning.pytorch.loggers import WandbLogger
+from lightning.pytorch.loggers import CometLogger
+from lightning.pytorch.loggers import CSVLogger
 
 
 parser = argparse.ArgumentParser()
@@ -51,7 +55,7 @@ parser.add_argument("--off-cls-token", action="store_true")
 parser.add_argument("--seed", default=42, type=int)
 parser.add_argument("--num_workers", type=int, default=4)
 parser.add_argument("--project_name", default="VisionTransformer")
-parser.add_argument('--experiment-memo', default='memo')
+parser.add_argument('--experiment_memo', default='memo')
 parser.add_argument('--data_path', type=str, default='./')
 parser.add_argument('--save_dir', type=str, default='/mnt/ssd2/')
 parser.add_argument('--logger', type=str, default='comet')
@@ -75,6 +79,17 @@ plt.imsave('./img1.png', train_ds.data[0])  # train_ds.data[0] : (32,32,3)
 
 train_dl = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
 test_dl = torch.utils.data.DataLoader(test_ds, batch_size=args.eval_batch_size, num_workers=args.num_workers, pin_memory=True)
+
+
+
+class PrintCallback(Callback):
+    def on_train_start(self, trainer, pl_module):
+        # breakpoint()
+        print("Training Started!!")
+        
+    def on_train_end(self, trainer, pl_module):
+        print("Training Finished!!")
+
 
 class Net(pl.LightningModule):
     def __init__(self, hparams):
@@ -120,9 +135,9 @@ class Net(pl.LightningModule):
             loss = self.criterion(out, label)
 
         # 실행 O
-        if not self.log_image_flag and not self.hparams.dry_run:
-            self.log_image_flag = True
-            self._log_image(img.clone().detach().cpu())
+        # if not self.log_image_flag and not self.hparams.dry_run:
+        #     self.log_image_flag = True
+        #     self._log_image(img.clone().detach().cpu())
 
         acc = torch.eq(out.argmax(-1), label).float().mean()
         self.log("train_loss",loss, on_step=False, on_epoch=True)
@@ -143,24 +158,33 @@ class Net(pl.LightningModule):
         # breakpoint()
         self.log("lr", self.optimizer.param_groups[0]["lr"], on_epoch=True)
         
-    def on_validation_epoch_end(self, *args, **kwargs):
-        # breakpoint()
+    def on_validation_epoch_end(self, *arg, **kwargs):
+
+        # save every 50 epochs
+        if self.current_epoch % 50 == 0:
+            save_path = f'{args.save_dir}/model_checkpoints/{args.experiment_memo}'      
+            if not os.path.exists(save_path):
+                os.makedirs(save_path)
+            self.state_dict()['epoch'] = self.current_epoch 
+            torch.save(self.state_dict(), f'{save_path}/epoch_{self.current_epoch}.pth')
+            
         self.log("lr", self.optimizer.param_groups[0]["lr"], on_epoch=True)
 
-    def _log_image(self, image):
-        breakpoint()
-        grid = torchvision.utils.make_grid(image, nrow=4)
-        self.logger.experiment.log_image(grid.permute(1,2,0))
-        print("[INFO] LOG IMAGE!!!")
+    # def _log_image(self, image):
+    #     breakpoint()
+    #     grid = torchvision.utils.make_grid(image, nrow=4)
+    #     self.logger.experiment.log_image(grid.permute(1,2,0))
+    #     print("[INFO] LOG IMAGE!!!")
 
 
 if __name__ == "__main__":
-    experiment_name = get_experiment_name(args)
+    # experiment_name = get_experiment_name(args)
+    experiment_name = args.experiment_memo    
         
     if args.logger == 'wandb':
         print('[WANDB Logger]')
         logger = WandbLogger(
-            log_model='all',
+            log_model=False,
             project=args.project_name,
             name=experiment_name,
             save_dir=f'{args.save_dir}'
@@ -168,7 +192,7 @@ if __name__ == "__main__":
     
     elif args.logger == 'comet':
         print("[INFO] Log with Comet.ml!")
-        logger = pl.loggers.CometLogger(
+        logger = CometLogger(
             api_key=args.api_key,
             save_dir=f'{args.save_dir}/comet',
             project_name=args.project_name,
@@ -177,19 +201,17 @@ if __name__ == "__main__":
         
     else:
         print("[INFO] Log with CSV")
-        logger = pl.loggers.CSVLogger(
+        logger = CSVLogger(
             save_dir=f'{args.save_dir}/drive',
             name=experiment_name
         )
+        
 
     # breakpoint()
     net = Net(args)
     # net = torch.compile(net,  mode='reduce-overhead')
-    trainer = pl.Trainer(precision=args.precision,fast_dev_run=args.dry_run, accelerator='auto', benchmark=args.benchmark, logger=logger, max_epochs=args.max_epochs, enable_model_summary=True)
+    trainer = pl.Trainer(precision=args.precision,fast_dev_run=args.dry_run, accelerator='auto', benchmark=args.benchmark, 
+                         logger=logger, max_epochs=args.max_epochs, enable_model_summary=True, callbacks=[PrintCallback()])
     trainer.fit(model=net, train_dataloaders=train_dl, val_dataloaders=test_dl)
     
-    if not args.dry_run:
-        model_path = f'{args.save_dir}/weights/{experiment_name}.pth'
-        torch.save(net.state_dict(), model_path)
-        if args.api_key:
-            logger.experiment.log_asset(file_name=experiment_name, file_data=model_path)
+    print(' End of Main')

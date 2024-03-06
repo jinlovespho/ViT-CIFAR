@@ -49,7 +49,24 @@ def get_model(args):
             hidden=args.hidden,
             head=args.head,
             is_cls_token=args.is_cls_token
-            )    
+            )  
+        
+    # JINLOVESPHO
+    elif args.model_name == 'vit_gyu':
+        from networks.vit_gyu import ViT_Gyu
+        breakpoint()
+        net = ViT_Gyu(
+            args.in_c, 
+            args.num_classes, 
+            img_size=args.size, 
+            patch=args.patch, 
+            dropout=args.dropout, 
+            mlp_hidden=args.mlp_hidden,
+            num_layers=args.num_layers,
+            hidden=args.hidden,
+            head=args.head,
+            is_cls_token=args.is_cls_token
+            )   
     
     else:
         raise NotImplementedError(f"{args.model_name} is not implemented yet...")
