@@ -4,13 +4,13 @@ import torch.nn.functional as F
 import torchsummary
 from einops import rearrange, einsum
 
-class TransformerEncoder_Parallel(nn.Module):
+
+class TransformerEncoder(nn.Module):
     def __init__(self, feats:int, mlp_hidden:int, head:int=8, dropout:float=0.):
-        super(TransformerEncoder_Parallel, self).__init__()
-        # self.la1 = nn.LayerNorm(feats)
-        self.msa = MultiHeadSelfAttention_Parallel(feats, head=head, dropout=dropout)
-        # self.la2 = nn.LayerNorm(feats)
-        self.bn = nn.BatchNorm2d(feats)
+        super(TransformerEncoder, self).__init__()
+        self.la1 = nn.LayerNorm(feats)
+        self.msa = MultiHeadSelfAttention(feats, head=head, dropout=dropout)
+        self.la2 = nn.LayerNorm(feats)
         self.mlp = nn.Sequential(
             nn.Linear(feats, mlp_hidden),
             nn.GELU(),
@@ -21,16 +21,15 @@ class TransformerEncoder_Parallel(nn.Module):
         )
 
     def forward(self, x):
-        # out = self.msa(self.la1(x)) + x
-        # out = self.mlp(self.la2(out)) + out
-        out = self.msa(x) + x
-        out = self.mlp(out) + out
+        breakpoint()
+        out = self.msa(self.la1(x)) + x
+        out = self.mlp(self.la2(out)) + out
         return out
 
 
-class MultiHeadSelfAttention_Parallel(nn.Module):
+class MultiHeadSelfAttention(nn.Module):
     def __init__(self, feats:int, head:int=8, dropout:float=0.):
-        super(MultiHeadSelfAttention_Parallel, self).__init__()
+        super(MultiHeadSelfAttention, self).__init__()
         self.head = head
         self.feats = feats
         self.sqrt_d = self.feats**0.5
@@ -41,9 +40,6 @@ class MultiHeadSelfAttention_Parallel(nn.Module):
 
         self.o = nn.Linear(feats, feats)
         self.dropout = nn.Dropout(dropout)
-        
-        self.la1 = nn.LayerNorm(feats//head)
-        self.la2 = nn.LayerNorm(feats//head)
 
     def forward(self, x):
         # breakpoint()
@@ -65,12 +61,20 @@ class MultiHeadSelfAttention_Parallel(nn.Module):
         
         return o
 
+class MultiHeadDepthwiseSelfAttention(nn.Module):
+    def __init__(self, feats:int, head:int=8, dropout:float=0):
+        super(MultiHeadDepthwiseSelfAttention, self).__init__()
+        ...
+
+    def forward(self, x):
+        
+        ...
 
 if __name__=="__main__":
     b,n,f = 4, 16, 128
     x = torch.randn(b,n,f)
     # net = MultiHeadSelfAttention(f)
-    net = TransformerEncoder_Parallel(f)
+    net = TransformerEncoder(f)
     torchsummary.summary(net, (n,f))
     # out = net(x)
     # print(out.shape)

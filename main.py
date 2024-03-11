@@ -15,10 +15,15 @@ from util.da import CutMix, MixUp
 # JINLOVESPHO
 import os
 import matplotlib.pyplot as plt 
+
+import wandb
 from lightning.pytorch.callbacks import Callback
 from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.loggers import CometLogger
 from lightning.pytorch.loggers import CSVLogger
+
+from torchprofile import profile_macs 
+from torchsummary import summary 
 
 
 parser = argparse.ArgumentParser()
@@ -34,7 +39,7 @@ parser.add_argument("--min-lr", default=1e-5, type=float)
 parser.add_argument("--beta1", default=0.9, type=float)
 parser.add_argument("--beta2", default=0.999, type=float)
 parser.add_argument("--off-benchmark", action="store_true")
-parser.add_argument("--max-epochs", default=200, type=int)
+parser.add_argument("--max_epochs", default=200, type=int)
 parser.add_argument("--dry-run", action="store_true")
 parser.add_argument("--weight-decay", default=1e-4, type=float)
 parser.add_argument("--warmup-epoch", default=5, type=int)
@@ -206,12 +211,23 @@ if __name__ == "__main__":
             name=experiment_name
         )
         
-
-    # breakpoint()
+    
     net = Net(args)
     # net = torch.compile(net,  mode='reduce-overhead')
+
+    # calculate and log: #of param, flops, and args
+    summ = summary(net.model, input_size=(3,32,32), batch_size=1, device='cpu')
+    macs = profile_macs(net.model, torch.rand(1,3,32,32))
+    tot_param = sum( i.numel() for i in net.model.parameters() if i.requires_grad )
+
+    logger.log_hyperparams({'Params': tot_param, 'MACS':macs, 'FLOPs':macs*2 })
+    logger.log_hyperparams(args)
+
+    # breakpoint()
+    
+    # trainer
     trainer = pl.Trainer(precision=args.precision,fast_dev_run=args.dry_run, accelerator='auto', benchmark=args.benchmark, 
-                         logger=logger, max_epochs=args.max_epochs, enable_model_summary=True, callbacks=[PrintCallback()])
+                         logger=logger, max_epochs=args.max_epochs+1, enable_model_summary=True, callbacks=[PrintCallback()])
     trainer.fit(model=net, train_dataloaders=train_dl, val_dataloaders=test_dl)
     
     print(' End of Main')

@@ -58,9 +58,15 @@ class MultiHeadSelfAttention(nn.Module):
         # key = self.k(x)
         # value = self.v(x)
         
+        # SOL 1
         # query = rearrange(query, 'b n (h d) -> b h n d', h=self.head)
         # key = rearrange(key, 'b n (h d) -> b h n d', h=self.head)
         # value = rearrange(value, 'b n (h d) -> b h n d', h=self.head)    
+        
+        # # SOL 2
+        # # query = query.view(b, n, self.head, -1)
+        # # query = query.permute(0, 2, 1, 3)
+        # # 나머지 key, value 한테도 똑같이 해주기
               
         # attn_matrix = einsum(query, key, 'b h n1 d, b h n2 d -> b h n1 n2') #(b,h,n,n)
         # score = F.softmax(attn_matrix/self.sqrt_d, dim=-1)  #(b,h,n,n)

@@ -7,6 +7,7 @@ import math
 from torch.cuda import nvtx
 import torchsummary
 from thop import profile
+from einops import einsum
 
 class TransformerEncoder(nn.Module):
     def __init__(self, feats:int, mlp_hidden:int, head:int=8, dropout:float=0.):
@@ -27,6 +28,7 @@ class TransformerEncoder(nn.Module):
         
     def forward(self, x):
         nvtx.range_push('model forward_split')
+        # breakpoint()
         b, n, f = x.size()
         x = x.view(b, n, self.head, self.feats//self.head)
         out = self.msa(self.la1(x)) + x
@@ -109,6 +111,7 @@ class GroupedLinear(nn.Module):
                 nn.init.uniform_(self.bias[g], -bound, bound)
 
     def forward(self, x):
+        # breakpoint()
         # x = (.., h, f//h)
         # Apply each linear layer to its corresponding group
         out = torch.einsum("...gi, gij->...gj", x, self.weight)

@@ -108,6 +108,7 @@ class GroupedLinear(nn.Module):
     def forward(self, x):
         # x = (.., h, f//h)
         # Apply each linear layer to its corresponding group
+        # breakpoint()
         out = torch.einsum("...gi, gij->...gj", x, self.weight)
         if self.bias is not None:
             out += self.bias
@@ -120,6 +121,7 @@ class FeatureWiseLinear(nn.Module):
         self.linear = nn.Linear(in_groups, out_groups)
     def forward(self, x):
         #b,n,h,f = x.size()
+        # breakpoint()
         x = x.transpose(2,3) # b,n,f,h
         x = self.linear(x)
         x = x.transpose(2,3) # b,n,h,f
