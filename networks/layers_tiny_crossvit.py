@@ -7,6 +7,7 @@ import math
 from torch.cuda import nvtx
 import torchsummary
 from thop import profile
+from einops import rearrange
 
 
 
@@ -19,19 +20,27 @@ class TransformerEncoder(nn.Module):
         self.la1 = nn.LayerNorm(feats//head)
         self.msa = MultiHeadSelfAttention(feats, head=head, dropout=dropout)
         self.la2 = nn.LayerNorm(feats//head)
+        # self.mlp = nn.Sequential(
+        #     GroupedLinear(feats, mlp_hidden, num_groups = head),
+        #     FeatureWiseLinear(head,head),
+        #     nn.GELU(),
+        #     nn.Dropout(dropout),
+        #     GroupedLinear(mlp_hidden, feats, num_groups = head),
+        #     FeatureWiseLinear(head,head),
+        #     nn.GELU(),
+        #     nn.Dropout(dropout),
+        # )
         self.mlp = nn.Sequential(
             GroupedLinear(feats, mlp_hidden, num_groups = head),
-            FeatureWiseLinear(head,head),
             nn.GELU(),
             nn.Dropout(dropout),
             GroupedLinear(mlp_hidden, feats, num_groups = head),
-            FeatureWiseLinear(head,head),
             nn.GELU(),
             nn.Dropout(dropout),
         )
         
     def forward(self, x):
-        breakpoint()
+        # breakpoint()
         nvtx.range_push('model forward_split')
         b, n, f = x.size()
         x = x.view(b, n, self.head, self.feats//self.head)
@@ -49,11 +58,18 @@ class MultiHeadSelfAttention(nn.Module):
         self.feats = feats
         self.sqrt_d = self.feats**0.5
 
-        self.q = nn.Sequential(GroupedLinear(feats, feats, num_groups= head), FeatureWiseLinear(head,head),)
-        self.k = nn.Sequential(GroupedLinear(feats, feats, num_groups= head), FeatureWiseLinear(head,head),)
-        self.v = nn.Sequential(GroupedLinear(feats, feats, num_groups= head), FeatureWiseLinear(head,head),)
+        self.q = nn.Sequential(GroupedLinear(feats, feats, num_groups= head), )
+        self.k = nn.Sequential(GroupedLinear(feats, feats, num_groups= head), )
+        self.v = nn.Sequential(GroupedLinear(feats, feats, num_groups= head), )
+        
+        # JINLOVESPHO (before head shuffle)
+        # self.head_shuffle = FeatureWiseLinear(head,head)
 
-        self.o = nn.Sequential(GroupedLinear(feats, feats, num_groups= head), FeatureWiseLinear(head,head),)
+        self.o = nn.Sequential(GroupedLinear(feats, feats, num_groups= head), )
+        
+        # JINLOVESPHO (after head shuffle)
+        self.head_shuffle = FeatureWiseLinear(head,head)
+        
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
@@ -61,15 +77,20 @@ class MultiHeadSelfAttention(nn.Module):
         # breakpoint()
         b, n, h, f = x.size()
 
-        q = self.q(x).transpose(1,2)
+        q = self.q(x).transpose(1,2)    # (b,h,n,f)
         k = self.k(x).transpose(1,2)
         v = self.v(x).transpose(1,2)
 
         # nvtx.range_push('Attention + score')
         score = F.softmax(torch.einsum("bhif, bhjf->bhij", q, k)/self.sqrt_d, dim=-1) #(b,h,n,n)
         attn = torch.einsum("bhij, bhjf->bihf", score, v) #(b,n,h,f//h)
+        
+        # JINLOVESPHO
+        attn = self.head_shuffle(attn)
+        
         # nvtx.range_pop()
         o = self.dropout(self.o(attn))
+        
         return o
 
 from torch import Tensor
@@ -113,6 +134,7 @@ class GroupedLinear(nn.Module):
         # Apply each linear layer to its corresponding group
         # breakpoint()
         out = torch.einsum("...gi, gij->...gj", x, self.weight)
+        # out2 = torch.einsum("...i,...ij->...j",x, self.weight)    # 위와 동일.
         if self.bias is not None:
             out += self.bias
         return out

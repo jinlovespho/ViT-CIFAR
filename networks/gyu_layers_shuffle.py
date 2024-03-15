@@ -28,11 +28,11 @@ class TransformerEncoder(nn.Module):
         
     def forward(self, x):
         nvtx.range_push('model forward_split')
-        # breakpoint()
+        breakpoint()
         b, n, f = x.size()
-        x = x.view(b, n, self.head, self.feats//self.head)
-        out = self.msa(self.la1(x)) + x
-        out = self.mlp(self.la2(out)) + out
+        x = x.view(b, n, self.head, self.feats//self.head)  # (b,n,h,f)
+        out = self.msa(self.la1(x)) + x                     # (b,n,h,f)
+        out = self.mlp(self.la2(out)) + out                 # (b,n,h,f) -> (b,n,h,4f) ->(b,n,h,f)
         nvtx.range_pop()
         return out.flatten(2)
 
@@ -62,6 +62,7 @@ class MultiHeadSelfAttention(nn.Module):
         #batch, seq_len, dim///
         b, n, h, f = x.size()
         # x = x[:, :, self.shuffle_order] #Random shuffling
+        breakpoint()
         x = x.transpose(2,3).reshape(b,n,h,f)
         q = self.q(x).transpose(1,2)
         k = self.k(x).transpose(1,2)
@@ -114,6 +115,7 @@ class GroupedLinear(nn.Module):
         # breakpoint()
         # x = (.., h, f//h)
         # Apply each linear layer to its corresponding group
+        breakpoint()
         out = torch.einsum("...gi, gij->...gj", x, self.weight)
         if self.bias is not None:
             out += self.bias

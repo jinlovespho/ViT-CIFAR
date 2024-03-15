@@ -49,16 +49,19 @@ class MultiHeadSelfAttention(nn.Module):
         self.feats = feats
         self.sqrt_d = self.feats**0.5
 
-        self.q = nn.Sequential(GroupedLinear(feats, feats, num_groups= head), FeatureWiseLinear(head,head),)
-        self.k = nn.Sequential(GroupedLinear(feats, feats, num_groups= head), FeatureWiseLinear(head,head),)
-        self.v = nn.Sequential(GroupedLinear(feats, feats, num_groups= head), FeatureWiseLinear(head,head),)
+        self.q = nn.Sequential(GroupedLinear(feats, feats, num_groups= head), )
+        self.k = nn.Sequential(GroupedLinear(feats, feats, num_groups= head), )
+        self.v = nn.Sequential(GroupedLinear(feats, feats, num_groups= head), )
+        
+        # JINLOVESPHO
+        self.head_shuffle = FeatureWiseLinear(head,head)
 
-        self.o = nn.Sequential(GroupedLinear(feats, feats, num_groups= head), FeatureWiseLinear(head,head),)
+        self.o = nn.Sequential(GroupedLinear(feats, feats, num_groups= head), )
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
         #batch, seq_len, dim///
-        # breakpoint()
+        breakpoint()
         b, n, h, f = x.size()
 
         q = self.q(x).transpose(1,2)
@@ -68,6 +71,10 @@ class MultiHeadSelfAttention(nn.Module):
         # nvtx.range_push('Attention + score')
         score = F.softmax(torch.einsum("bhif, bhjf->bhij", q, k)/self.sqrt_d, dim=-1) #(b,h,n,n)
         attn = torch.einsum("bhij, bhjf->bihf", score, v) #(b,n,h,f//h)
+        
+        # JINLOVESPHO
+        attn = self.head_shuffle(attn)  # (b,n,h,f)
+        
         # nvtx.range_pop()
         o = self.dropout(self.o(attn))
         return o
@@ -111,7 +118,7 @@ class GroupedLinear(nn.Module):
     def forward(self, x):
         # x = (.., h, f//h)
         # Apply each linear layer to its corresponding group
-        # breakpoint()
+        breakpoint()
         out = torch.einsum("...gi, gij->...gj", x, self.weight)
         if self.bias is not None:
             out += self.bias
@@ -124,7 +131,7 @@ class FeatureWiseLinear(nn.Module):
         self.linear = nn.Linear(in_groups, out_groups)
     def forward(self, x):
         #b,n,h,f = x.size()
-        # breakpoint()
+        breakpoint()
         x = x.transpose(2,3) # b,n,f,h
         x = self.linear(x)
         x = x.transpose(2,3) # b,n,h,f

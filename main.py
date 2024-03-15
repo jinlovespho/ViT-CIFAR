@@ -183,8 +183,8 @@ class Net(pl.LightningModule):
 
 
 if __name__ == "__main__":
-    # experiment_name = get_experiment_name(args)
-    experiment_name = args.experiment_memo    
+    experiment_name = get_experiment_name(args)
+    # experiment_name = args.experiment_memo    
         
     if args.logger == 'wandb':
         print('[WANDB Logger]')
@@ -214,14 +214,14 @@ if __name__ == "__main__":
     
     net = Net(args)
     # net = torch.compile(net,  mode='reduce-overhead')
-
+    
     # calculate and log: #of param, flops, and args
-    summ = summary(net.model, input_size=(3,32,32), batch_size=1, device='cpu')
-    macs = profile_macs(net.model, torch.rand(1,3,32,32))
-    tot_param = sum( i.numel() for i in net.model.parameters() if i.requires_grad )
+    # summ = summary(net.model, input_size=(3,32,32), batch_size=1, device='cpu')
+    # macs = profile_macs(net.model, torch.rand(1,3,32,32))
+    # tot_param = sum( i.numel() for i in net.model.parameters() if i.requires_grad )
 
-    logger.log_hyperparams({'Params': tot_param, 'MACS':macs, 'FLOPs':macs*2 })
-    logger.log_hyperparams(args)
+    # logger.log_hyperparams({'Params': tot_param, 'MACS':macs, 'FLOPs':macs*2 })
+    # logger.log_hyperparams(args)
 
     # breakpoint()
     

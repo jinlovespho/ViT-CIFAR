@@ -5,21 +5,21 @@ DATA_PATH="/mnt/ssd2/dataset/CIFAR100"
 SAVE_DIR="/mnt/ssd2/log/vit_cifar100"
 
 # 1. Hyperparameters
-MODEL_NAME="vit_gyu"        # ['vit', 'vit_parallel', 'vit_gyu']
+MODEL_NAME="vit-Small_crossVit"        # ['vit', 'vit_parallel', 'vit_gyu']
 DATASET="c100"
 MAX_EPOCHS=200
 BATCH_SIZE=128
 LR=1e-3
 NUM_LAYERS=12
-HIDDEN=192
-MLP_HIDDEN=768
-HEAD=3
+HIDDEN=384
+MLP_HIDDEN=1536
+HEAD=6
 NUM_WORKERS=4
 
 # 2. Logger & Project & Experiment Info
 LOGGER="None"
 PROJ_NAME="lignex1_vit_cifar100"
-EXP_NAME="LOCAL_bs${BATCH_SIZE}_${MODEL_NAME}_shuffle"
+EXP_NAME="LOCAL_bs${BATCH_SIZE}_${MODEL_NAME}"
 
 # 3. run
 CUDA_VISIBLE_DEVICES=0 python main.py   --model-name ${MODEL_NAME} \
@@ -41,8 +41,6 @@ CUDA_VISIBLE_DEVICES=0 python main.py   --model-name ${MODEL_NAME} \
                                         --experiment_memo ${EXP_NAME} \
                                         --num_workers ${NUM_WORKERS} \
                                         --logger ${LOGGER} \
-                                        --api-key upJRJyzbQWeOazI7HlvvikhpG \
-                                        --autoaugment \
-                                        --label-smoothing \
+                                        --api-key upJRJyzbQWeOazI7HlvvikhpG
 
 echo "finished one experiment"

@@ -68,10 +68,10 @@ def get_model(args):
             is_cls_token=args.is_cls_token
             )
     
-    elif args.model_name == 'vit_my_cls':
-        from networks.vit_my_cls import ViT_My_CLS
+    elif args.model_name == 'vit-Tiny_crossVit':
+        from networks.vit_tiny_crossvit import ViT_Tiny_CrossVit
         breakpoint()
-        net = ViT_My_CLS(
+        net = ViT_Tiny_CrossVit(
             args.in_c, 
             args.num_classes, 
             img_size=args.size, 
@@ -82,7 +82,23 @@ def get_model(args):
             hidden=args.hidden,
             head=args.head,
             is_cls_token=args.is_cls_token
-            )      
+            )
+    
+    elif args.model_name == 'vit-Small_crossVit':
+        from networks.vit_small_crossvit import ViT_Small_CrossVit
+        breakpoint()
+        net = ViT_Small_CrossVit(
+            args.in_c, 
+            args.num_classes, 
+            img_size=args.size, 
+            patch=args.patch, 
+            dropout=args.dropout, 
+            mlp_hidden=args.mlp_hidden,
+            num_layers=args.num_layers,
+            hidden=args.hidden,
+            head=args.head,
+            is_cls_token=args.is_cls_token
+            )        
     
     else:
         raise NotImplementedError(f"{args.model_name} is not implemented yet...")
@@ -163,17 +179,17 @@ def get_dataset(args):
 
 def get_experiment_name(args):
     experiment_name = f"{args.experiment_memo}"
-    # if args.autoaugment:
-    #     experiment_name+="_aa"
-    # if args.label_smoothing:
-    #     experiment_name+="_ls"
-    # if args.rcpaste:
-    #     experiment_name+="_rc"
-    # if args.cutmix:
-    #     experiment_name+="_cm"
-    # if args.mixup:
-    #     experiment_name+="_mu"
-    # if args.off_cls_token:
-    #     experiment_name+="_gap"
+    if args.autoaugment:
+        experiment_name+="_aa"
+    if args.label_smoothing:
+        experiment_name+="_ls"
+    if args.rcpaste:
+        experiment_name+="_rc"
+    if args.cutmix:
+        experiment_name+="_cm"
+    if args.mixup:
+        experiment_name+="_mu"
+    if args.off_cls_token:
+        experiment_name+="_gap"
     print(f"Experiment:{experiment_name}")
     return experiment_name

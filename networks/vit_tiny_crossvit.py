@@ -2,12 +2,11 @@ import torch
 import torch.nn as nn
 import torchsummary
 
-from networks.gyu_layers_shuffle import TransformerEncoder
-# from networks.gyu_layers_separate import TransformerEncoder
+from networks.layers_tiny_crossvit import TransformerEncoder
 
-class ViT_Gyu(nn.Module):
+class ViT_Tiny_CrossVit(nn.Module):
     def __init__(self, in_c:int=3, num_classes:int=10, img_size:int=32, patch:int=8, dropout:float=0., num_layers:int=7, hidden:int=384, mlp_hidden:int=384*4, head:int=8, is_cls_token:bool=True):
-        super(ViT_Gyu, self).__init__()
+        super(ViT_Tiny_CrossVit, self).__init__()
         # hidden=384
 
         self.patch = patch # number of patches in one row(or col)
@@ -28,13 +27,13 @@ class ViT_Gyu(nn.Module):
 
 
     def forward(self, x):
+        # breakpoint()
         out = self._to_words(x)
         out = self.emb(out)
         if self.is_cls_token:
             out = torch.cat([self.cls_token.repeat(out.size(0),1,1), out],dim=1)
         out = out + self.pos_emb
         out = self.enc(out)
-        breakpoint()
         if self.is_cls_token:
             out = out[:,0]
         else:
@@ -54,7 +53,7 @@ class ViT_Gyu(nn.Module):
 if __name__ == "__main__":
     b,c,h,w = 4, 3, 32, 32
     x = torch.randn(b, c, h, w)
-    net = ViT_Gyu(in_c=c, num_classes= 10, img_size=h, patch=16, dropout=0.1, num_layers=7, hidden=384, head=12, mlp_hidden=384, is_cls_token=False)
+    net = ViT_Tiny_CrossVit(in_c=c, num_classes= 10, img_size=h, patch=16, dropout=0.1, num_layers=7, hidden=384, head=12, mlp_hidden=384, is_cls_token=False)
     # out = net(x)
     # out.mean().backward()
     torchsummary.summary(net, (c,h,w))

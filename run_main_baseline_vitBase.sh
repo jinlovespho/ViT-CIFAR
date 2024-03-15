@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # 0. Paths
+# DATA_PATH="/media/dataset1/jinlovespho/cifar100"
+# SAVE_DIR="/media/dataset1/jinlovespho/log/vit_cifar100"
 DATA_PATH="/mnt/ssd2/dataset/CIFAR100"
 SAVE_DIR="/mnt/ssd2/log/vit_cifar100"
 
@@ -10,16 +12,16 @@ DATASET="c100"
 MAX_EPOCHS=200
 BATCH_SIZE=128
 LR=1e-3
-HEAD=12
 NUM_LAYERS=12
 HIDDEN=768
 MLP_HIDDEN=3072
+HEAD=12
 NUM_WORKERS=4
 
 # 2. Logger & Project & Experiment Info
-LOGGER="wandb"      # [ 'wandb', 'None' ]
+LOGGER="None"      # [ 'wandb', 'None' ]
 PROJ_NAME="lignex1_vit_cifar100"
-EXP_NAME="LOCAL_bs${BATCH_SIZE}_${MODEL_NAME}-Base_baseline"
+EXP_NAME="LOCAL_bs${BATCH_SIZE}_${MODEL_NAME}-Base_ClsCrossAttn"
 
 # 3. run
 CUDA_VISIBLE_DEVICES=0 python main.py   --model-name ${MODEL_NAME} \

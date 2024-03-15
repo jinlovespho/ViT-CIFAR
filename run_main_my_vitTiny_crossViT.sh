@@ -5,21 +5,21 @@ DATA_PATH="/mnt/ssd2/dataset/CIFAR100"
 SAVE_DIR="/mnt/ssd2/log/vit_cifar100"
 
 # 1. Hyperparameters
-MODEL_NAME="vit_my_cls"        # ['vit', 'vit_parallel', 'vit_gyu']
+MODEL_NAME="vit-Tiny_crossVit"        # ['vit', 'vit_parallel', 'vit_gyu']
 DATASET="c100"
 MAX_EPOCHS=200
 BATCH_SIZE=128
 LR=1e-3
-HEAD=8
-NUM_LAYERS=8
-HIDDEN=384
-MLP_HIDDEN=1536
+NUM_LAYERS=12
+HIDDEN=192
+MLP_HIDDEN=768
+HEAD=3
 NUM_WORKERS=4
 
 # 2. Logger & Project & Experiment Info
-LOGGER="None"
+LOGGER="wandb"
 PROJ_NAME="lignex1_vit_cifar100"
-EXP_NAME="LOCAL_bs${BATCH_SIZE}_${MODEL_NAME}_jlp_baseline"
+EXP_NAME="LOCAL_bs${BATCH_SIZE}_${MODEL_NAME}_headshuffleAfterAttn_headshuffle_X_ffn"
 
 # 3. run
 CUDA_VISIBLE_DEVICES=0 python main.py   --model-name ${MODEL_NAME} \
